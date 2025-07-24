@@ -1,6 +1,7 @@
 /// Simplified color enum to avoid depending on `crossterm::Color` in user-facing types.
 #[derive(Debug, Clone, Copy)]
 pub enum Color {
+    Reset,
     Black,
     DarkGrey,
     Red,
@@ -23,6 +24,7 @@ impl From<Color> for crossterm::style::Color {
     fn from(color: Color) -> Self {
         use crossterm::style::Color as C;
         match color {
+            Color::Reset => C::Reset,
             Color::Black => C::Black,
             Color::DarkGrey => C::DarkGrey,
             Color::Red => C::Red,
