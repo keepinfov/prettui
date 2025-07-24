@@ -1,6 +1,9 @@
 [package]
 name = "prettui"
+description = "Simple high-level lib for pretty tui"
 version = "0.1.0"
+repository = "https://github.com/keepinfov/prettui"
+license = "MIT"
 edition = "2024"
 
 [dependencies]
