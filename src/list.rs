@@ -4,7 +4,7 @@ use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     execute,
     style::{Print, ResetColor, SetForegroundColor},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, size},
 };
 use std::io::{Write, stdout};
 
@@ -92,16 +92,28 @@ impl ListConfig {
 /// - Type numbers to jump to an item directly
 /// - Backspace to edit input buffer
 /// - Realtime visual updates with highlighted selection
+/// - Automatic terminal space management
 pub fn choose_from_list<T: ToString>(items: &[T], config: &ListConfig) -> Result<Option<usize>> {
     enable_raw_mode()?;
     let (start_col, start_row) = position()?;
     let mut stdout = stdout();
+
+    // Ensure we have enough space in the terminal
+    let display_start_row = ensure_display_space(start_row, config)?;
+
     let total = items.len();
     let per_page = config.items_per_row * config.rows_per_page;
     let mut selected = 0;
     let mut digit_buffer = String::new();
 
-    render_page(items, selected, &digit_buffer, config, start_col, start_row)?;
+    render_page(
+        items,
+        selected,
+        &digit_buffer,
+        config,
+        start_col,
+        display_start_row,
+    )?;
 
     loop {
         if let Event::Key(KeyEvent { code, .. }) = event::read()? {
@@ -143,20 +155,64 @@ pub fn choose_from_list<T: ToString>(items: &[T], config: &ListConfig) -> Result
                     } else {
                         Some(selected)
                     };
-                    cleanup(&mut stdout, start_col, start_row, config)?;
+                    cleanup(&mut stdout, start_col, display_start_row, config)?;
                     disable_raw_mode()?;
                     return Ok(choice);
                 }
                 KeyCode::Esc => {
-                    cleanup(&mut stdout, start_col, start_row, config)?;
+                    cleanup(&mut stdout, start_col, display_start_row, config)?;
                     disable_raw_mode()?;
                     return Ok(None);
                 }
                 _ => {}
             }
 
-            render_page(items, selected, &digit_buffer, config, start_col, start_row)?;
+            render_page(
+                items,
+                selected,
+                &digit_buffer,
+                config,
+                start_col,
+                display_start_row,
+            )?;
         }
+    }
+}
+
+/// Ensure there's enough space in the terminal to display the list.
+/// If not enough space, create additional lines by printing newlines.
+///
+/// # Parameters
+/// - `current_row`: Current cursor row position
+/// - `config`: Configuration containing display dimensions
+///
+/// # Returns
+/// The row where the list should start displaying
+fn ensure_display_space(current_row: u16, config: &ListConfig) -> Result<u16> {
+    let mut stdout = stdout();
+    let (_, terminal_height) = size()?;
+
+    // Calculate required space: rows_per_page + 1 (for input line)
+    let required_lines = config.rows_per_page as u16 + 1;
+    let available_lines = terminal_height.saturating_sub(current_row);
+
+    if available_lines < required_lines {
+        // Need to create more space
+        let lines_to_create = required_lines - available_lines;
+
+        // Print newlines to create space and scroll the terminal
+        for _ in 0..lines_to_create {
+            execute!(stdout, Print("\n"))?;
+        }
+        stdout.flush()?;
+
+        // Get new position after creating space
+        let (_, new_row) = position()?;
+        // The display should start from a position that leaves enough space
+        Ok(new_row.saturating_sub(required_lines))
+    } else {
+        // Enough space available, use current position
+        Ok(current_row)
     }
 }
 
