@@ -1,4 +1,43 @@
-// src/io/output.rs
+//! Configuration for printing styled output to the console.
+//!
+//! This struct controls how messages are formatted:
+//! - `prefix`: text shown before each message (e.g., a label)
+//! - `prefix_color`: color applied to the prefix and log level tag
+//! - `text_color`: color applied to the message body
+//! - `log_level`: optional tag (e.g., INFO, WARN) displayed before the message
+//! - `indent_level`: number of spaces to indent each line
+//! - `max_chars_per_line`: maximum width before wrapping occurs
+//!
+//! # Full Example
+//!
+//! ```rust
+//! use prettui::io::output::{OutputConfig, write_output};
+//! use prettui::color::Color;
+//!
+//! fn main() -> std::io::Result<()> {
+//!     // Example 1: simple message with default config
+//!     let mut cfg1 = OutputConfig::default();
+//!     write_output(&cfg1, "Hello, world! This is a long message that will wrap around at the default width of 80 characters to demonstrate text wrapping functionality.")?;
+//!
+//!     // Example 2: with prefix and indent
+//!     let mut cfg2 = OutputConfig::default();
+//!     cfg2.prefix = String::from("[App] ");
+//!     cfg2.prefix_color = Color::Blue;
+//!     cfg2.indent_level = 4;
+//!     write_output(&cfg2, "Indented message with a prefix.")?;
+//!
+//!     // Example 3: with log level tag and custom text color
+//!     let mut cfg3 = OutputConfig::default();
+//!     cfg3.log_level = Some(String::from("INFO"));
+//!     cfg3.text_color = Color::Green;
+//!     cfg3.prefix = String::from("[Server] ");
+//!     cfg3.prefix_color = Color::Magenta;
+//!     write_output(&cfg3, "Server started on port 8080.")?;
+//!
+//!     Ok(())
+//! }
+//! ```
+
 use crate::color::Color;
 use crate::io::input::wrap_text;
 use crossterm::{
@@ -7,39 +46,17 @@ use crossterm::{
 };
 use std::io::{self, Write};
 
-/// Configuration for printing styled output to the console.
-///
-/// This struct controls how messages are formatted:
-/// - `prefix`: text shown before each message (e.g., a label)
-/// - `prefix_color`: color applied to the prefix and log level tag
-/// - `text_color`: color applied to the message body
-/// - `log_level`: optional tag (e.g., INFO, WARN) displayed before the message
-/// - `indent_level`: number of spaces to indent each line
-/// - `max_chars_per_line`: maximum width before wrapping occurs
 #[derive(Debug, Clone)]
 pub struct OutputConfig {
-    /// Text to display before each message (e.g., module name).
     pub prefix: String,
-    /// Color for the prefix and log level tag.
     pub prefix_color: Color,
-    /// Color for the main message text.
     pub text_color: Color,
-    /// Optional log level label (e.g., INFO, WARN).
     pub log_level: Option<String>,
-    /// Number of spaces to indent each line of output.
     pub indent_level: usize,
-    /// Maximum number of characters per line before wrapping.
     pub max_chars_per_line: usize,
 }
 
 impl Default for OutputConfig {
-    /// Returns a default `OutputConfig` with:
-    /// - empty prefix
-    /// - green prefix color
-    /// - white text color
-    /// - no log level tag
-    /// - no indentation
-    /// - line wrap at 80 characters
     fn default() -> Self {
         Self {
             prefix: String::new(),
@@ -65,41 +82,27 @@ impl Default for OutputConfig {
 ///
 /// # Errors
 /// Returns an `io::Error` if writing to stdout fails.
-///
-/// # Examples
-/// ```no_run
-/// let mut cfg = OutputConfig::default();
-/// cfg.prefix = String::from("[MyApp]");
-/// cfg.log_level = Some(String::from("INFO"));
-/// write_output(&cfg, "Application started").unwrap();
-/// ```
 pub fn write_output(cfg: &OutputConfig, message: &str) -> io::Result<()> {
     let mut stdout = io::stdout();
     let wrapped = wrap_text(message, cfg.max_chars_per_line);
 
     for line in wrapped {
-        // Apply indentation
         if cfg.indent_level > 0 {
             let indent = " ".repeat(cfg.indent_level);
             stdout.execute(Print(indent.clone()))?;
         }
-        // Print prefix if provided
         if !cfg.prefix.is_empty() {
             stdout.execute(PrintStyledContent(
                 cfg.prefix.clone().with(cfg.prefix_color.into()),
             ))?;
         }
-        // Print log level tag if present
         if let Some(ref level) = cfg.log_level {
             stdout.execute(PrintStyledContent(
                 format!("[{}] ", level).with(cfg.prefix_color.into()),
             ))?;
         }
-        // Print message text
         stdout.execute(PrintStyledContent(line.with(cfg.text_color.into())))?;
-        // Newline
         stdout.execute(Print("\n"))?;
     }
-    // Ensure all output is flushed
     stdout.flush()
 }
