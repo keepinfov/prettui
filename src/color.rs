@@ -1,3 +1,5 @@
+pub use crossterm::style::Stylize;
+
 /// Simplified color enum to avoid depending on `crossterm::Color` in user-facing types.
 #[derive(Debug, Clone, Copy)]
 pub enum Color {
