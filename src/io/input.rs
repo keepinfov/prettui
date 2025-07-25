@@ -163,3 +163,57 @@ pub(crate) fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
     }
     lines
 }
+
+/// Reads a secret line of input without echoing to the terminal.
+///
+/// This function:
+/// 1. Applies indentation and prints the styled prompt once.
+/// 2. Enables raw mode to suppress echo.
+/// 3. Reads key events until Enter is pressed, collecting characters.
+/// 4. Disables raw mode and moves to a new line.
+/// 5. Returns the entered string (without newline).
+///
+/// # Errors
+/// Returns an `io::Error` if terminal manipulation or reading fails.
+pub fn read_secret_input(cfg: &InputConfig) -> io::Result<String> {
+    use crossterm::event::{self, Event, KeyCode, KeyEvent};
+    use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+
+    // Print styled prompt
+    let mut stdout = io::stdout();
+    if cfg.indent_level > 0 {
+        let indent = " ".repeat(cfg.indent_level);
+        stdout.execute(Print(indent))?;
+    }
+    if !cfg.prefix.is_empty() {
+        stdout.execute(PrintStyledContent(
+            cfg.prefix.clone().with(cfg.prefix_color.into()),
+        ))?;
+    }
+    stdout.execute(PrintStyledContent(
+        cfg.prompt.clone().with(cfg.prompt_color.into()),
+    ))?;
+    stdout.flush()?;
+
+    // Enable raw mode (suppress echo)
+    enable_raw_mode()?;
+    let mut input = String::new();
+    loop {
+        // Read next key event
+        if let Event::Key(KeyEvent { code, .. }) = event::read()? {
+            match code {
+                KeyCode::Enter => break,
+                KeyCode::Char(c) => input.push(c),
+                KeyCode::Backspace => {
+                    input.pop();
+                }
+                _ => {}
+            }
+        }
+    }
+    // Restore terminal
+    disable_raw_mode()?;
+    // Move to next line
+    println!();
+    Ok(input)
+}
