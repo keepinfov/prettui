@@ -16,7 +16,7 @@ Add `prettui` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-prettui = "0.2.3"
+prettui = "0.3.0"
 ```
 
 Or using command:
