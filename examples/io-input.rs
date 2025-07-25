@@ -1,5 +1,5 @@
 use prettui::color::Color;
-use prettui::io::input::{InputConfig, read_input, read_multiline_input};
+use prettui::io::input::{InputConfig, read_input, read_multiline_input, read_secret_input};
 
 fn main() -> std::io::Result<()> {
     let cfg = InputConfig {
@@ -19,6 +19,9 @@ fn main() -> std::io::Result<()> {
     // Multiline body: prompt shown once, end with '.' line
     let body = read_multiline_input(&cfg, ".")?;
     println!("Body:\n{}", body);
+
+    let secret = read_secret_input(&cfg)?;
+    println!("Secret: {}", secret);
 
     Ok(())
 }
