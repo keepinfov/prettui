@@ -3,7 +3,7 @@ use prettui::io::input::{InputConfig, read_input, read_multiline_input, read_sec
 
 fn main() -> std::io::Result<()> {
     let cfg = InputConfig {
-        prefix: String::from("[Email] "),
+        prefix: String::from("[TEST] "),
         prompt: String::from(">> "),
         prefix_color: Color::Magenta,
         prompt_color: Color::Cyan,
