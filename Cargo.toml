@@ -1,11 +1,11 @@
 [package]
 name = "prettui"
 description = "Simple high-level lib for pretty command-line ui"
-version = "0.3.1"
+version = "0.3.2"
 repository = "https://github.com/keepinfov/prettui"
 documentation = "https://docs.rs/prettui/"
 license = "MIT"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 anyhow = "1.0.98"
