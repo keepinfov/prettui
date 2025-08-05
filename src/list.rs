@@ -1,12 +1,12 @@
 use anyhow::Result;
 use crossterm::{
-    cursor::{MoveTo, position},
+    cursor::{position, MoveTo},
     event::{self, Event, KeyCode, KeyEvent},
     execute,
     style::{Print, ResetColor, SetForegroundColor},
     terminal::{disable_raw_mode, enable_raw_mode, size},
 };
-use std::io::{Write, stdout};
+use std::io::{stdout, Write};
 
 use crate::color::Color;
 
@@ -14,15 +14,15 @@ use crate::color::Color;
 #[derive(Debug, Clone)]
 pub struct ListConfig {
     /// Number of items displayed per row.
-    items_per_row: usize,
+    pub items_per_row: usize,
     /// Number of rows displayed per page.
-    rows_per_page: usize,
+    pub rows_per_page: usize,
     /// Width of each cell in characters.
-    cell_width: u16,
+    pub cell_width: u16,
     /// Foreground color for non-highlighted items.
-    normal_fg: Color,
+    pub normal_fg: Color,
     /// Foreground color for the highlighted (selected) item.
-    highlight_fg: Color,
+    pub highlight_fg: Color,
 }
 
 impl Default for ListConfig {
