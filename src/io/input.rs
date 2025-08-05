@@ -5,6 +5,7 @@
 //! - `read_input`: read a single line from stdin with styling and EOF handling.
 //! - `read_multiline_input`: read multiple lines until a terminator is entered, showing prompt only once.
 //! - `wrap_text`: word-wrap long strings into lines of a specified width.
+//! - `read_secret_input`: read a secret line of input without echoing to the terminal.
 //!
 //! # Full Example
 //!
@@ -14,7 +15,7 @@
 //!
 //! fn main() -> std::io::Result<()> {
 //!     let cfg = InputConfig {
-//!         prefix: String::from("[Email] "),
+//!         prefix: String::from("[TEST] "),
 //!         prompt: String::from(">> "),
 //!         prefix_color: Color::Magenta,
 //!         prompt_color: Color::Cyan,
@@ -30,6 +31,10 @@
 //!     // Multiline body: prompt shown once, end with '.' line
 //!     let body = read_multiline_input(&cfg, ".")?;
 //!     println!("Body:\n{}", body);
+//!
+//!     // Secret input
+//!     let body = read_secret_input(&cfg)?;
+//!     println!("Secret:\n{}", body);
 //!
 //!     Ok(())
 //! }
