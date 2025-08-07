@@ -42,8 +42,8 @@
 
 use crate::color::Color;
 use crossterm::{
-    ExecutableCommand,
     style::{Print, PrintStyledContent, ResetColor, SetForegroundColor, Stylize},
+    ExecutableCommand,
 };
 use std::io::{self, BufRead, BufReader, Write};
 
@@ -180,14 +180,21 @@ pub(crate) fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
 ///
 /// # Errors
 /// Returns an `io::Error` if terminal manipulation or reading fails.
+
 pub fn read_secret_input(cfg: &InputConfig) -> io::Result<String> {
-    use crossterm::event::{self, Event, KeyCode, KeyEvent};
-    use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+    use crossterm::{
+        event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+        style::{Print, PrintStyledContent},
+        terminal::{disable_raw_mode, enable_raw_mode},
+        ExecutableCommand,
+    };
+    use std::io::{self, Write};
 
     // Print styled prompt
     let mut stdout = io::stdout();
     if cfg.indent_level > 0 {
         let indent = " ".repeat(cfg.indent_level);
+        // <-- use Print for a plain string
         stdout.execute(Print(indent))?;
     }
     if !cfg.prefix.is_empty() {
@@ -204,8 +211,17 @@ pub fn read_secret_input(cfg: &InputConfig) -> io::Result<String> {
     enable_raw_mode()?;
     let mut input = String::new();
     loop {
-        // Read next key event
-        if let Event::Key(KeyEvent { code, .. }) = event::read()? {
+        // Read next key event, ignoring the extra fields
+        if let Event::Key(KeyEvent {
+            code, modifiers, ..
+        }) = event::read()?
+        {
+            // Ctrl+C -> cancel input
+            if code == KeyCode::Char('c') && modifiers.contains(KeyModifiers::CONTROL) {
+                disable_raw_mode()?;
+                println!();
+                return Err(io::Error::new(io::ErrorKind::Interrupted, "Input canceled"));
+            }
             match code {
                 KeyCode::Enter => break,
                 KeyCode::Char(c) => input.push(c),
